@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CUMPLEAÑOS</title>
+
+  <!-- Tipografías elegantes -->
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@300;400&family=Cormorant+Garamond:wght@300;400;500&display=swap" rel="stylesheet">
+
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #04060c;
+      color: #eaeaea;
+      height: 100%;
+      overflow: hidden;
+      font-family: 'Cormorant Garamond', serif;
+    }
+
+    .screen {
+      position: absolute;
+      inset: 0;
+      display: none;
+    }
+
+    .screen.active {
+      display: block;
+    }
+
+    .center {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100%;
+      text-align: center;
+      padding: 20px;
+      z-index: 10;
+      position: relative;
+    }
+
+    h1 {
+      font-family: 'Playfair Display', serif;
+      font-weight: 300;
+      letter-spacing: 1px;
+      margin-bottom: 30px;
+      font-size: 2.5rem;
+    }
+
+    p {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.4rem;
+      opacity: 0.8;
+      line-height: 1.6;
+      max-width: 600px;
+    }
+
+    button {
+      background: transparent;
+      border: 1px solid rgba(255,255,255,0.4);
+      color: #fff;
+      padding: 12px 28px;
+      margin: 10px;
+      font-size: 1.1rem;
+      font-family: 'Cormorant Garamond', serif;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      letter-spacing: 0.5px;
+    }
+
+    button:hover {
+      background: rgba(255,255,255,0.1);
+      border-color: rgba(255,255,255,0.7);
+    }
+
+    .back {
+      position: absolute;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 100;
+      padding: 10px 24px;
+      font-size: 1rem;
+    }
+
+    canvas {
+      display: block;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* Carteles / modales */
+    .modal {
+      position: absolute;
+      inset: 0;
+      background: rgba(4,6,12,0.92);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.6s ease;
+      z-index: 1000;
+    }
+
+    .modal.active {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .modal-content {
+      border: 1px solid rgba(255,255,255,0.3);
+      padding: 40px 50px;
+      text-align: center;
+      font-family: 'Playfair Display', serif;
+      animation: appear 0.6s ease;
+      background: rgba(4,6,12,0.95);
+      max-width: 500px;
+      width: 80%;
+      border-radius: 4px;
+    }
+
+    #wordText {
+      font-size: 1.8rem;
+      margin-bottom: 20px;
+      color: #ffffff;
+    }
+
+    #phraseText {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.4rem;
+      line-height: 1.8;
+      opacity: 0.9;
+      font-style: italic;
+    }
+
+    .close {
+      margin-top: 30px;
+      cursor: pointer;
+      opacity: 0.6;
+      font-size: 1.3rem;
+      transition: opacity 0.3s ease;
+      padding: 8px 20px;
+      border: 1px solid rgba(255,255,255,0.3);
+      display: inline-block;
+    }
+
+    .close:hover {
+      opacity: 1;
+      background: rgba(255,255,255,0.1);
+    }
+
+    @keyframes appear {
+      from { transform: translateY(20px) scale(0.95); opacity: 0; }
+      to   { transform: translateY(0) scale(1);  opacity: 1; }
+    }
+
+    #rest .center {
+      pointer-events: none;
+    }
+
+    #rest p {
+      background: rgba(4,6,12,0.7);
+      padding: 20px 40px;
+      border-radius: 2px;
+      backdrop-filter: blur(5px);
+    }
+
+    /* Controles de música */
+    .music-control {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      z-index: 1001;
+      background: rgba(4,6,12,0.7);
+      border: 1px solid rgba(255,255,255,0.3);
+      color: white;
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 1.3rem;
+      transition: all 0.3s ease;
+      backdrop-filter: blur(5px);
+    }
+
+    .music-control:hover {
+      background: rgba(255,255,255,0.1);
+      transform: scale(1.05);
+    }
+
+    .music-control.paused::after {
+      content: '▶️';
+    }
+
+    .music-control.playing::after {
+      content: '⏸️';
+    }
+
+    /* Contenedor de palabras en explorar */
+    .word-container {
+      position: absolute;
+      top: 80px;
+      left: 20px;
+      background: rgba(4,6,12,0.7);
+      padding: 15px;
+      border-radius: 4px;
+      border: 1px solid rgba(255,255,255,0.2);
+      max-width: 200px;
+      z-index: 100;
+      backdrop-filter: blur(5px);
+    }
+
+    .word-container h3 {
+      margin: 0 0 10px 0;
+      font-size: 1rem;
+      opacity: 0.8;
+      font-family: 'Playfair Display', serif;
+    }
+
+    .word-list {
+      font-size: 0.9rem;
+      line-height: 1.5;
+      opacity: 0.7;
+    }
+  </style>
+</head>
+
+<body>
+
+<!-- Música -->
+<audio id="musicHome" loop>
+  <source src="pan.mp3" type="audio/mpeg">
+</audio>
+
+<audio id="musicRest" loop>
+  <source src="pani.mp3" type="audio/mpeg">
+</audio>
+
+<audio id="musicExplore" loop>
+  <source src="pan1.mp3" type="audio/mpeg">
+</audio>
+
+<!-- Pantalla de inicio -->
+<div id="home" class="screen active">
+  <button id="musicToggleHome" class="music-control playing"></button>
+  <div class="center">
+    <h1>Feliz cumpleaños Nath</h1>
+  <h1>¿Qué quieres hacer hoy?</h1>
+    <button onclick="goRest()">Descansar</button>
+    <button onclick="goExplore()">Explorar</button>
+  </div>
+</div>
+
+<!-- Pantalla de descansar -->
+<div id="rest" class="screen">
+  <button id="musicToggleRest" class="music-control playing"></button>
+  <canvas id="restCanvas"></canvas>
+  <div class="center">
+    <p>Algunas cosas no se activan.<br>Se contemplan.</p>
+  </div>
+  <button class="back" onclick="goHome()">Atrás</button>
+</div>
+
+<!-- Pantalla de explorar -->
+<div id="explore" class="screen">
+  <button id="musicToggleExplore" class="music-control playing"></button>
+  <canvas id="exploreCanvas"></canvas>
+  
+  <div class="word-container">
+    <h3>Palabras para explorar:</h3>
+    <div class="word-list">
+      Coherencia, Leyes universales, Abstracto, Humanidad, Concepto, Cumpleaños, Silencio, Estructura, Redes neuronales, Reflexión, White space
+    </div>
+  </div>
+  
+  <button class="back" onclick="goHome()">Atrás</button>
+
+  <!-- Cartel inicial -->
+  <div id="hint" class="modal active">
+    <div class="modal-content">
+      <p>Tocá o hacé clic en la pantalla para revelar palabras.</p>
+      <p><small>Cada palabra contiene un mensaje.</small></p>
+      <button onclick="closeHint()">Comenzar</button>
+    </div>
+  </div>
+
+  <!-- Cartel de palabra con frase -->
+  <div id="wordModal" class="modal">
+    <div class="modal-content">
+      <p id="wordText"></p>
+      <p id="phraseText"></p>
+      <div class="close" onclick="closeWord()">Continuar</div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Variables globales
+const home = document.getElementById('home');
+const rest = document.getElementById('rest');
+const explore = document.getElementById('explore');
+
+const musicHome = document.getElementById('musicHome');
+const musicRest = document.getElementById('musicRest');
+const musicExplore = document.getElementById('musicExplore');
+
+// Objeto con palabras y frases terapéuticas para INTJ
+const wordPhrases = {
+  "Coherencia": "No es elegir bien, es no traicionarte en cada decisión. Es vivr entre lo que eres y en como elegís mostrarte, sin fragmentarte.",
+  "Leyes universales": "Como mente analítica, comprendes que todo tiene su patrón y orden. Sigue confiando en que el universo tiene una lógica que a la larga, termina respetando tu necesidad de estructura.",
+  "Abstracto": "Tu mente puede navegar en lo abstracto mientras tus pies están en la tierra. Este equilibrio no es una contradicción.",
+  "Humanidad": "Detrás de cada sistema, teoría o estructura, hay personas con quienes creas vínculos que te permiten sostenerte a ti misma si los dejas acompañarte, en silencio si quieres o incluso si no puedes mostrarte vulnerable. Es tu elección después de todo.",
+  "Concepto": "Sin conceptos, lo profundo no llega a la realidad, sin realidad el concepto es inutil y se queda vacío.",
+  "Cumpleaños": "Cada año marca un punto distinto, una etapa de tu vida. Por eso, no estás celebrando el día de tu nacimiento, sino el no haberte quedado en el mismo lugar en el que estuviste.",
+  "Silencio": "Aquí aparece la incomodidad, ese momento donde dejás de distraerte y de poner excusas. Te ves obligada a enfrentar lo que evitabas pensar o sentir, recién entonces empezás a escucharte por fuera del ruido de lo cotidiano.",
+  "Estructura": "Confía en tu arquitectura mental, es lo suficientemente sólida para sostenerte.",
+  "Redes neuronales": "La mente aprende de la repetición también. Por eso, sostener siempre los mismos pensamientos termina definiendo no solo lo que entendés, sino lo que eres capaz de ver, hacer.",
+  "Reflexión": "No es analizarlo todo, es detenerte lo suficiente como para ver dónde te mentís, que justificás y que elegís cambiar.",
+  "White space": "Queremos desearte un mejor año el que sigue, te queremos.",
+  "Recuerda": "Sabes que hay momentos en los que no se trata de avanzar, sino de respirar hondo y tomarte el momento para vos. El relajarte, sentirte, el apagar un rato tu cerebro y encontrar la tranquilidad antes de seguir."
+};
+
+// Lista de palabras (keys del objeto)
+const words = Object.keys(wordPhrases);
+
+// ========== FUNCIONES DE NAVEGACIÓN Y MÚSICA ==========
+function stopAllMusic() {
+  musicHome.pause();
+  musicRest.pause();
+  musicExplore.pause();
+  
+  // Actualizar controles
+  document.querySelectorAll('.music-control').forEach(control => {
+    control.classList.remove('playing');
+    control.classList.add('paused');
+  });
+}
+
+function goHome() {
+  stopAllMusic();
+  musicHome.play();
+  home.classList.add('active');
+  rest.classList.remove('active');
+  explore.classList.remove('active');
+  
+  // Actualizar control de música
+  document.getElementById('musicToggleHome').classList.remove('paused');
+  document.getElementById('musicToggleHome').classList.add('playing');
+}
+
+function goRest() {
+  stopAllMusic();
+  musicRest.play();
+  home.classList.remove('active');
+  rest.classList.add('active');
+  explore.classList.remove('active');
+  
+  // Actualizar control de música
+  document.getElementById('musicToggleRest').classList.remove('paused');
+  document.getElementById('musicToggleRest').classList.add('playing');
+  
+  initRestCanvas();
+}
+
+function goExplore() {
+  stopAllMusic();
+  musicExplore.play();
+  home.classList.remove('active');
+  rest.classList.remove('active');
+  explore.classList.add('active');
+  
+  // Actualizar control de música
+  document.getElementById('musicToggleExplore').classList.remove('paused');
+  document.getElementById('musicToggleExplore').classList.add('playing');
+  
+  initExploreCanvas();
+}
+
+function closeHint() {
+  document.getElementById('hint').classList.remove('active');
+}
+
+function closeWord() {
+  document.getElementById('wordModal').classList.remove('active');
+}
+
+function showWord(word, phrase) {
+  document.getElementById('wordText').textContent = word;
+  document.getElementById('phraseText').textContent = phrase;
+  document.getElementById('wordModal').classList.add('active');
+}
+
+// ========== CONTROLES DE MÚSICA ==========
+// Configurar controles de música
+document.getElementById('musicToggleHome').addEventListener('click', function() {
+  if (musicHome.paused) {
+    musicHome.play();
+    this.classList.remove('paused');
+    this.classList.add('playing');
+  } else {
+    musicHome.pause();
+    this.classList.remove('playing');
+    this.classList.add('paused');
+  }
+});
+
+document.getElementById('musicToggleRest').addEventListener('click', function() {
+  if (musicRest.paused) {
+    musicRest.play();
+    this.classList.remove('paused');
+    this.classList.add('playing');
+  } else {
+    musicRest.pause();
+    this.classList.remove('playing');
+    this.classList.add('paused');
+  }
+});
+
+document.getElementById('musicToggleExplore').addEventListener('click', function() {
+  if (musicExplore.paused) {
+    musicExplore.play();
+    this.classList.remove('paused');
+    this.classList.add('playing');
+  } else {
+    musicExplore.pause();
+    this.classList.remove('playing');
+    this.classList.add('paused');
+  }
+});
+
+// ========== CANVAS DE DESCANSO (ESTRELLAS) ==========
+let restCtx, restStars = [];
+let restAnimationId;
+
+class Star {
+  constructor() {
+    this.x = Math.random() * window.innerWidth;
+    this.y = Math.random() * window.innerHeight;
+    this.size = Math.random() * 1.5 + 0.3;
+    this.speed = Math.random() * 0.3 + 0.05;
+    this.opacity = Math.random() * 0.5 + 0.2;
+    this.twinkleSpeed = Math.random() * 0.015 + 0.003;
+    this.twinkleDirection = Math.random() > 0.5 ? 1 : -1;
+  }
+
+  update() {
+    this.y += this.speed;
+    if (this.y > window.innerHeight) {
+      this.y = 0;
+      this.x = Math.random() * window.innerWidth;
+    }
+    
+    // Efecto de parpadeo suave
+    this.opacity += this.twinkleSpeed * this.twinkleDirection;
+    if (this.opacity > 0.6 || this.opacity < 0.1) {
+      this.twinkleDirection *= -1;
+    }
+  }
+
+  draw() {
+    restCtx.beginPath();
+    restCtx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+    restCtx.fillStyle = `rgba(255, 255, 255, ${this.opacity})`;
+    restCtx.fill();
+  }
+}
+
+function initRestCanvas() {
+  const canvas = document.getElementById('restCanvas');
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  restCtx = canvas.getContext('2d');
+  
+  // Crear estrellas (más para un efecto más relajante)
+  restStars = [];
+  const starCount = 300;
+  for (let i = 0; i < starCount; i++) {
+    restStars.push(new Star());
+  }
+  
+  // Iniciar animación
+  if (restAnimationId) {
+    cancelAnimationFrame(restAnimationId);
+  }
+  animateRest();
+}
+
+function animateRest() {
+  // Fondo con desvanecimiento suave para efecto de trazo
+  restCtx.fillStyle = 'rgba(4, 6, 12, 0.05)';
+  restCtx.fillRect(0, 0, window.innerWidth, window.innerHeight);
+  
+  // Actualizar y dibujar estrellas
+  restStars.forEach(star => {
+    star.update();
+    star.draw();
+  });
+  
+  restAnimationId = requestAnimationFrame(animateRest);
+}
+
+// ========== CANVAS DE EXPLORACIÓN (INTERACTIVO) ==========
+let exploreCtx, exploreParticles = [];
+let exploreAnimationId;
+
+class Particle {
+  constructor(x, y, word) {
+    this.x = x;
+    this.y = y;
+    this.word = word;
+    this.size = Math.random() * 22 + 16;
+    this.speedX = Math.random() * 1.5 - 0.75;
+    this.speedY = Math.random() * 1.5 - 0.75;
+    this.opacity = 1;
+    this.fadeSpeed = Math.random() * 0.004 + 0.001;
+    // Colores suaves y terapéuticos
+    const hues = [180, 200, 220, 240, 260]; // Tonos azules y púrpuras
+    const hue = hues[Math.floor(Math.random() * hues.length)];
+    this.color = `hsl(${hue}, 70%, 75%)`;
+    this.rotation = Math.random() * Math.PI * 2;
+    this.rotationSpeed = (Math.random() - 0.5) * 0.02;
+  }
+
+  update() {
+    this.x += this.speedX;
+    this.y += this.speedY;
+    this.opacity -= this.fadeSpeed;
+    this.rotation += this.rotationSpeed;
+    
+    // Rebote suave en bordes
+    if (this.x < 0 || this.x > window.innerWidth) this.speedX *= -1;
+    if (this.y < 0 || this.y > window.innerHeight) this.speedY *= -1;
+    
+    return this.opacity > 0;
+  }
+
+  draw() {
+    exploreCtx.save();
+    exploreCtx.translate(this.x, this.y);
+    exploreCtx.rotate(this.rotation);
+    exploreCtx.globalAlpha = this.opacity;
+    exploreCtx.font = `${this.size}px 'Cormorant Garamond'`;
+    exploreCtx.fillStyle = this.color;
+    exploreCtx.textAlign = 'center';
+    exploreCtx.textBaseline = 'middle';
+    exploreCtx.fillText(this.word, 0, 0);
+    exploreCtx.restore();
+  }
+}
+
+function initExploreCanvas() {
+  const canvas = document.getElementById('exploreCanvas');
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  exploreCtx = canvas.getContext('2d');
+  
+  exploreParticles = [];
+  
+  // Limpiar animación anterior
+  if (exploreAnimationId) {
+    cancelAnimationFrame(exploreAnimationId);
+  }
+  
+  // Evento de clic/touch
+  canvas.addEventListener('click', handleExploreClick);
+  canvas.addEventListener('touchstart', function(e) {
+    e.preventDefault();
+    const touch = e.touches[0];
+    const rect = canvas.getBoundingClientRect();
+    const x = touch.clientX - rect.left;
+    const y = touch.clientY - rect.top;
+    handleExploreClick({clientX: x + rect.left, clientY: y + rect.top});
+  }, {passive: false});
+  
+  animateExplore();
+}
+
+function handleExploreClick(event) {
+  const rect = exploreCanvas.getBoundingClientRect();
+  const x = event.clientX - rect.left;
+  const y = event.clientY - rect.top;
+  
+  // Seleccionar palabra aleatoria
+  const randomWord = words[Math.floor(Math.random() * words.length)];
+  const phrase = wordPhrases[randomWord];
+  
+  // Crear partícula
+  exploreParticles.push(new Particle(x, y, randomWord));
+  
+  // Mostrar modal con la palabra y frase
+  showWord(randomWord, phrase);
+}
+
+function animateExplore() {
+  // Efecto de desvanecimiento muy suave
+  exploreCtx.fillStyle = 'rgba(4, 6, 12, 0.03)';
+  exploreCtx.fillRect(0, 0, window.innerWidth, window.innerHeight);
+  
+  // Actualizar y dibujar partículas
+  exploreParticles = exploreParticles.filter(particle => {
+    const isAlive = particle.update();
+    particle.draw();
+    return isAlive;
+  });
+  
+  exploreAnimationId = requestAnimationFrame(animateExplore);
+}
+
+// ========== INICIALIZACIÓN Y MANEJO DE RESIZE ==========
+window.addEventListener('resize', () => {
+  // Restablecer tamaño de canvas
+  const restCanvas = document.getElementById('restCanvas');
+  const exploreCanvas = document.getElementById('exploreCanvas');
+  
+  if (restCanvas) {
+    restCanvas.width = window.innerWidth;
+    restCanvas.height = window.innerHeight;
+  }
+  
+  if (exploreCanvas) {
+    exploreCanvas.width = window.innerWidth;
+    exploreCanvas.height = window.innerHeight;
+  }
+  
+  // Recrear estrellas si estamos en pantalla de descanso
+  if (rest.classList.contains('active')) {
+    initRestCanvas();
+  }
+});
+
+// Para superar restricciones de autoplay en navegadores
+document.addEventListener('click', function inicializarAudio() {
+  // Solo intentar reproducir si está en la pantalla de inicio
+  if (home.classList.contains('active') && musicHome.paused) {
+    musicHome.play().then(() => {
+      console.log("Música de inicio iniciada");
+    }).catch(e => {
+      console.log("Esperando interacción del usuario para música");
+    });
+  }
+  
+  // Remover el event listener después del primer clic
+  document.removeEventListener('click', inicializarAudio);
+});
+
+// Iniciar con la pantalla de inicio
+goHome();
+</script>
+</body>
+</html>
